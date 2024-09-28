@@ -12,16 +12,7 @@ app = FastAPI()
 
 my_Posts = [{"title":"title of post 1","content":"content of post 1","id":1},
             {"title":"title of post 2","content":"content of post 2","id":2}]
-while True:
-    try:
-        conn=psycopg2.connect(host='localhost',database='fastapi',user='postgres',password='12345',cursor_factory=RealDictCursor)
-        cursor = conn.cursor()
-        print("connected sucessfully")
-        break
-    except  Exception as error:
-        print("Connection failed")
-        print("error",error)
-        time.sleep(2)
+
 
 def find_post(id):
     for p in my_Posts:
@@ -39,23 +30,32 @@ class Post(BaseModel):
     content : str
     published :bool = True
 
+while True:
+    try:
+        conn = psycopg2.connect(host='localhost',database='fastapi',user='postgres',password='12345',cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("DB CONNECTED")
+        break
+
+    except Exception as error:
+        print("connection failed ",error)
+        time.sleep(2)
+
 @app.get("/")
 def root():
-    
     return {"message":"WELCOME TO ROOT"}
 
 @app.get("/posts")
 def get_posts():
     cursor.execute("""SELECT * FROM posts""")
     post=cursor.fetchall()
+    print(post)
     return {"data":post}
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
 def create_post(post:Post):
-    cursor.execute(f""""INSERT INTO POST (title,content,published) VALUES ({post.title},{post.content},{post.published}""")
-    cursor.execute("""INSERT INTO POST (title,content,published) VALUES (%s,%s,%s)""",post.title,post.content,post.published)
-    
-    return {'message':'created post'}
+    cursor.execute("""INSERT INTO posts (content,title,published) VALUES (%s,%s,%s)""",(post.title,post.content,post.published))
+    return {'message':'post created'}
 
 @app.get("/posts/{id}")
 def get_post(id:int,responce :Response):
