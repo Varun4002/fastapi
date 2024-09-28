@@ -54,17 +54,17 @@ def get_posts():
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
 def create_post(post:Post):
-    cursor.execute("""INSERT INTO posts (content,title,published) VALUES (%s,%s,%s)""",(post.title,post.content,post.published))
-    return {'message':'post created'}
+    cursor.execute("""INSERT INTO posts (content,title,published) VALUES (%s,%s,%s) RETURNING *""",(post.title,post.content,post.published))
+    new_post =  cursor.fetchone()
+    conn.commit()
+    return {'message':new_post}
 
 @app.get("/posts/{id}")
 def get_post(id:int,responce :Response):
-    post = find_post(id)
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"the post with id:{id} was not found")
-        # responce.status_code = status.HTTP_404_NOT_FOUND
-        # return {"message":f"the id:{id} was not found"}
-    return {"message":post}
+    cursor.execute(f"""SELECT * FROM posts WHERE id = {id}""")
+    found_post = cursor.fetchone()
+    print(found_post)
+    return {"message":found_post}
 
 @app.delete("/posts/{id}",status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id:int):
