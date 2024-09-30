@@ -32,14 +32,22 @@ class Post(BaseModel):
 
 while True:
     try:
-        conn = psycopg2.connect(host='localhost',database='fastapi',user='postgres',password='12345',cursor_factory=RealDictCursor)
-        cursor = conn.cursor()
-        print("DB CONNECTED")
-        break
+        conn = psycopg2.connect(
+            host='localhost',
+            database='fastapi',
+            user='postgres', 
+            password='12345',
+            cursor_factory=RealDictCursor
+        )
 
-    except Exception as error:
-        print("connection failed ",error)
-        time.sleep(2)
+        cursor = conn.cursor()
+        print('connected ')
+        break
+    except Exception as e:
+        print("failed to connect")
+        print('error is ',e)
+
+        
 
 @app.get("/")
 def root():
@@ -49,7 +57,6 @@ def root():
 def get_posts():
     cursor.execute("""SELECT * FROM posts""")
     post=cursor.fetchall()
-    print(post)
     return {"data":post}
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
