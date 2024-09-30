@@ -1,1 +1,1 @@
-python3 -m app
+python3 app/__main__.py
