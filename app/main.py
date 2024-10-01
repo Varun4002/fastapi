@@ -29,24 +29,17 @@ class Post(BaseModel):
     title : str
     content : str
     published :bool = True
-
 while True:
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='fastapi',
-            user='postgres', 
-            password='12345',
-            cursor_factory=RealDictCursor
-        )
-
-        cursor = conn.cursor()
-        print('connected ')
+        conn = psycopg2.connect(host='localhost',database='fastapi',user='postgres',password='12345',cursor_factory=RealDictCursor)
+        cursor=conn.cursor()
+        print("connection established")
         break
-    except Exception as e:
-        print("failed to connect")
-        print('error is ',e)
 
+    except Exception as error:
+        print("connection failed")
+        print(error)
+        time.sleep(2)
         
 
 @app.get("/")
@@ -57,28 +50,32 @@ def root():
 def get_posts():
     cursor.execute("""SELECT * FROM posts""")
     post=cursor.fetchall()
+    print(post)
     return {"data":post}
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
 def create_post(post:Post):
-    cursor.execute("""INSERT INTO posts (content,title,published) VALUES (%s,%s,%s) RETURNING *""",(post.title,post.content,post.published))
-    new_post =  cursor.fetchone()
+    cursor.execute("""INSERT INTO posts (title,content,published) VALUES (%s,%s,%s) RETURNING *""",(post.title,post.content,post.published))
+    new_post=cursor.fetchone()
     conn.commit()
     return {'message':new_post}
 
 @app.get("/posts/{id}")
 def get_post(id:int,responce :Response):
-    cursor.execute(f"""SELECT * FROM posts WHERE id = {id}""")
-    found_post = cursor.fetchone()
-    print(found_post)
-    return {"message":found_post}
+    cursor.execute("""SELECT * FROM posts WHERE id=(%s)""",(str(id)))
+    new_post=cursor.fetchone()
+    if not new_post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"id with key {id} not found",)
+    return {"message":new_post}
 
 @app.delete("/posts/{id}",status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id:int):
-    index=find_index(id)
-    if index == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Not found post")
-    my_Posts.pop(index)
+
+    cursor.execute("""DELETE FROM posts WHERE id=%s RETURNING *""",(str(id)))
+    deleted_post=cursor.fetchone()
+    conn.commit()
+    if deleted_post == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with id {id} not found")
     return {"message":"post was removed sucessfully"}
 
 @app.put("/posts/{id}")
