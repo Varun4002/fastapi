@@ -5,10 +5,14 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from . import models
+from .database import engine
 
 app = FastAPI()
 
 
+
+SQLModel.metadata.create_all(engine)
 
 my_Posts = [{"title":"title of post 1","content":"content of post 1","id":1},
             {"title":"title of post 2","content":"content of post 2","id":2}]
