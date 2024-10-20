@@ -1,3 +1,4 @@
 fastapi[all]
-psycopg[binary]
+psycopg
+psycopg2-binary
 sqlalchemy
